@@ -36,6 +36,7 @@ ISTIO_EXTENSIONS = [
     "//source/extensions/filters/http/istio_stats",
     "//source/extensions/filters/http/peer_metadata:filter_lib",
     "//source/extensions/filters/network/metadata_exchange:config_lib",
+    "//source/extensions/upstreams/http/conditional:config",
 ]
 
 envoy_cc_binary(

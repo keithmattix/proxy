@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-opts=(--vscode)
+opts=(--vscode --include_external)
 
 # Setting TEST_TMPDIR here so the compdb headers won't be overwritten by another bazel run
 TEST_TMPDIR=${BUILD_DIR:-/tmp}/envoy-compdb tools/gen_compilation_database.py \
