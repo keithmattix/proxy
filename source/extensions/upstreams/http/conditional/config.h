@@ -30,7 +30,7 @@ namespace Conditional {
 /**
  * Config registration for the HttpConditionalConnPool. @see Router::GenericConnPoolFactory
  */
-class HttpConditionalConnPoolFactory : public Router::GenericConnPoolFactory {
+class HttpConditionalConnPoolFactory : public Router::GenericConnPoolFactory, public Logger::Loggable<Logger::Id::upstream> {
 public:
   std::string name() const override { return "istio.filters.connection_pools.http.conditional"; }
   std::string category() const override { return "envoy.upstreams"; }
@@ -40,6 +40,10 @@ public:
       Upstream::ResourcePriority priority,
       absl::optional<Envoy::Http::Protocol> downstream_protocol, Upstream::LoadBalancerContext* ctx,
       const Protobuf::Message&) const override;
+  ProtobufTypes::MessagePtr createEmptyConfigProto() override {
+    return std::make_unique<istio::envoy::upstreams::http::conditional::ConditionalUpstream>();
+  }
+
   Router::GenericConnPoolPtr defaultGenericConnPool(
       Upstream::HostConstSharedPtr host, Upstream::ThreadLocalCluster& thread_local_cluster,
       Router::GenericConnPoolFactory::UpstreamProtocol upstream_protocol,
@@ -62,9 +66,6 @@ public:
     }
 
     return nullptr;
-  }
-  ProtobufTypes::MessagePtr createEmptyConfigProto() override {
-    return std::make_unique<istio::envoy::upstreams::http::conditional::ConditionalUpstream>();
   }
 };
 

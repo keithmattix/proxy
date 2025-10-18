@@ -15,8 +15,7 @@
 
 #include "source/extensions/upstreams/http/conditional/config.h"
 
-#include "source/extensions/upstreams/http/conditional/upstream_request.h"
-
+#include "source/common/config/metadata.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -33,29 +32,44 @@ Router::GenericConnPoolPtr HttpConditionalConnPoolFactory::createGenericConnPool
   const auto& conditional_config =
       dynamic_cast<const istio::envoy::upstreams::http::conditional::ConditionalUpstream&>(config);
 
-  // Access the server factory context through the singleton
-  auto server_context =
-      Server::Configuration::ServerFactoryContextInstance::getExisting();
-
-  const auto matcher = std::make_unique<Envoy::Matchers::MetadataMatcher>(conditional_config.metadata_matcher(), *server_context);
-
-  if (matcher->match(*host->metadata())) {
-    // Matched; now check the policy
-    switch (conditional_config.policy()) {
-    case istio::envoy::upstreams::http::conditional::ConditionalUpstream_Policy::ConditionalUpstream_Policy_ALWAYS_CREATE_NEW_CONNECTION:
-    case istio::envoy::upstreams::http::conditional::ConditionalUpstream_Policy::ConditionalUpstream_Policy_UNSET:
-      return defaultGenericConnPool(host, thread_local_cluster, upstream_protocol, priority,
-                                    downstream_protocol, ctx);
-    default:
-      PANIC("not implemented");
-    }
+  const auto key = std::make_unique<Envoy::Config::MetadataKey>(conditional_config.key());
+  const auto expected_value = conditional_config.value();
+  const auto actual_value = Envoy::Config::Metadata::metadataValue(host->metadata().get(), *key);
+  if (!actual_value.has_string_value()) {
+    ENVOY_LOG(trace,
+              "Metadata value for key {} and path {} not found or not a string. Proceeding with "
+              "default behavior",
+              key->key_, key->path_);
+    return defaultGenericConnPool(host, thread_local_cluster, upstream_protocol, priority,
+                                  downstream_protocol, ctx);
   }
-
-  // No match, use default behavior
-  return defaultGenericConnPool(host, thread_local_cluster, upstream_protocol, priority,
-                                downstream_protocol,  ctx);
+  if (actual_value.string_value() != expected_value) {
+    ENVOY_LOG(
+        trace,
+        "Metadata value '{}' does not match expected value '{}'. Proceeding with default behavior",
+        actual_value.string_value(), expected_value);
+    return defaultGenericConnPool(host, thread_local_cluster, upstream_protocol, priority,
+                                  downstream_protocol, ctx);
+  }
+  ENVOY_LOG(debug, "Metadata value '{}' matches expected value '{}'. Applying conditional policy",
+            actual_value.string_value(), expected_value);
+  // Matched; now check the policy
+  switch (conditional_config.policy()) {
+  case istio::envoy::upstreams::http::conditional::ConditionalUpstream_Policy::
+      ConditionalUpstream_Policy_ALWAYS_CREATE_NEW_CONNECTION:
+    ENVOY_LOG(info, "Creating new connection pool as per ALWAYS_CREATE_NEW_CONNECTION policy");
+    return defaultGenericConnPool(host, thread_local_cluster, upstream_protocol, priority,
+                                  downstream_protocol, ctx); // TODO
+  case istio::envoy::upstreams::http::conditional::ConditionalUpstream_Policy::
+      ConditionalUpstream_Policy_UNSET:
+    return defaultGenericConnPool(host, thread_local_cluster, upstream_protocol, priority,
+                                  downstream_protocol, ctx);
+  default:
+    PANIC("not implemented");
+  }
 }
 
+REGISTER_FACTORY(HttpConditionalConnPoolFactory, Router::GenericConnPoolFactory);
 } // namespace Conditional
 } // namespace Http
 } // namespace Upstreams

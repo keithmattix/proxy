@@ -44,10 +44,8 @@ envoy_cc_extension(
 envoy_cc_library(
     name = "upstream_request_lib",
     srcs = [
-        "upstream_request.cc",
     ],
     hdrs = [
-        "upstream_request.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
@@ -56,19 +54,17 @@ envoy_cc_library(
         "@envoy//envoy/http:codes_interface",
         "@envoy//envoy/http:conn_pool_interface",
         "@envoy//envoy/http:filter_interface",
-        "@envoy//envoy/upstream:cluster_manager_interface",
-        "@envoy//envoy/upstream:upstream_interface",
-        "@envoy//source/common/common:assert_lib",
-        "@envoy//source/common/common:minimal_logger_lib",
-        "@envoy//source/common/http:codes_lib",
-        "@envoy//source/common/http:header_map_lib",
-        "@envoy//source/common/http:headers_lib",
-        "@envoy//source/common/http:message_lib",
-        "@envoy//source/common/network:application_protocol_lib",
-        "@envoy//source/common/network:transport_socket_options_lib",
+        "@envoy//envoy/router:router_interface",
+        "@envoy//envoy/tcp:conn_pool_interface",
+        "@envoy//envoy/upstream:thread_local_cluster_interface",
+        "@envoy//source/common/http:conn_pool_base_lib",
         "@envoy//source/common/router:router_lib",
-        "@envoy//source/common/upstream:load_balancer_context_base_lib",
-        "@envoy//source/extensions/common/proxy_protocol:proxy_protocol_header_lib",
+        "@envoy//source/common/stream_info:stream_info_lib",
+        "@envoy//source/common/upstream:upstream_lib",
+        "@envoy//source/extensions/upstreams/http/http:upstream_request_lib",
+        "@envoy//source/extensions/upstreams/http/tcp:upstream_request_lib",
+        "@envoy//source/extensions/upstreams/http/udp:upstream_request_lib",
+        "@envoy//source/common/common:minimal_logger_lib"
     ],
 )
 
@@ -82,6 +78,6 @@ proto_library(
     srcs = ["config.proto"],
     deps = [
         "@com_google_protobuf//:duration_proto",
-        "@envoy_api//envoy/type/matcher/v3:pkg",
+        "@envoy_api//envoy/type/metadata/v3:pkg",
     ],
 )

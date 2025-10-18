@@ -19,7 +19,7 @@ syntax = "proto3";
 
 package istio.envoy.upstreams.http.conditional;
 
-import "envoy/type/matcher/v3/metadata.proto";
+import "envoy/type/metadata/v3/metadata.proto";
 
 option go_package = "istio.io/api/envoy/upstreams/http/conditional";
 
@@ -32,8 +32,11 @@ message ConditionalUpstream {
     ALWAYS_CREATE_NEW_CONNECTION = 1;
   }
   // A matcher to run against the host metadata to determine if connection pooling should be used.
-  .envoy.type.matcher.v3.MetadataMatcher metadata_matcher = 1;
+  .envoy.type.metadata.v3.MetadataKey key = 1;
+
+  // The value to match against
+  string value = 2;
 
   // The policy to be used if the matcher matches.
-  Policy policy = 2;
+  Policy policy = 3;
 }

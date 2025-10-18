@@ -39,7 +39,7 @@ TEST(AlpnFilterConfigTest, OverrideAlpn) {
   const std::string yaml = R"EOF(
     alpn_override:
     - upstream_protocol: HTTP10
-      alpn_override: ["foo", "bar"]    
+      alpn_override: ["foo", "bar"]
     - upstream_protocol: HTTP11
       alpn_override: ["baz"]
     - upstream_protocol: HTTP2
