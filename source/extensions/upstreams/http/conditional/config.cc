@@ -16,6 +16,10 @@
 #include "source/extensions/upstreams/http/conditional/config.h"
 
 #include "source/common/config/metadata.h"
+#include "source/extensions/upstreams/http/conditional/no_reuse/no_reuse_http_conn_pool.h"
+#include "source/extensions/upstreams/http/conditional/no_reuse/no_reuse_tcp_conn_pool.h"
+#include "source/extensions/upstreams/http/conditional/no_reuse/no_reuse_udp_conn_pool.h"
+#include <memory>
 
 namespace Envoy {
 namespace Extensions {
@@ -58,8 +62,32 @@ Router::GenericConnPoolPtr HttpConditionalConnPoolFactory::createGenericConnPool
   case istio::envoy::upstreams::http::conditional::ConditionalUpstream_Policy::
       ConditionalUpstream_Policy_ALWAYS_CREATE_NEW_CONNECTION:
     ENVOY_LOG(info, "Creating new connection pool as per ALWAYS_CREATE_NEW_CONNECTION policy");
-    return defaultGenericConnPool(host, thread_local_cluster, upstream_protocol, priority,
-                                  downstream_protocol, ctx); // TODO
+
+    // Create no-reuse connection pools based on the upstream protocol
+    switch (upstream_protocol) {
+    case UpstreamProtocol::HTTP: {
+      auto conn_pool =
+          std::make_unique<NoReuse::NoReuseHttpConnPool>(host, thread_local_cluster, priority, downstream_protocol, ctx);
+      return (conn_pool->valid() ? std::move(conn_pool) : nullptr);
+    }
+
+    case UpstreamProtocol::TCP: {
+      auto conn_pool =
+          std::make_unique<NoReuse::NoReuseTcpConnPool>(host, thread_local_cluster, priority, ctx);
+      return (conn_pool->valid() ? std::move(conn_pool) : nullptr);
+    }
+
+    case UpstreamProtocol::UDP: {
+      auto conn_pool = std::make_unique<NoReuse::NoReuseUdpConnPool>(host);
+      return (conn_pool->valid() ? std::move(conn_pool) : nullptr);
+    }
+
+    default:
+      ENVOY_LOG(warn,
+                "Unknown upstream protocol for ALWAYS_CREATE_NEW_CONNECTION policy, using default");
+      return defaultGenericConnPool(host, thread_local_cluster, upstream_protocol, priority,
+                                    downstream_protocol, ctx);
+    }
   case istio::envoy::upstreams::http::conditional::ConditionalUpstream_Policy::
       ConditionalUpstream_Policy_UNSET:
     return defaultGenericConnPool(host, thread_local_cluster, upstream_protocol, priority,

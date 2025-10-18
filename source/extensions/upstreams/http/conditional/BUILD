@@ -37,15 +37,22 @@ envoy_cc_extension(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        ":upstream_request_lib",
+        ":no_reuse_conn_pool_lib",
     ],
 )
 
 envoy_cc_library(
-    name = "upstream_request_lib",
+    name = "no_reuse_conn_pool_lib",
     srcs = [
+        "no_reuse/no_reuse_http_conn_pool.cc",
+        "no_reuse/no_reuse_tcp_conn_pool.cc",
+        "no_reuse/no_reuse_udp_conn_pool.cc",
     ],
     hdrs = [
+        "no_reuse/no_reuse_conn_pool_wrapper.h",
+        "no_reuse/no_reuse_http_conn_pool.h",
+        "no_reuse/no_reuse_tcp_conn_pool.h",
+        "no_reuse/no_reuse_udp_conn_pool.h",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
